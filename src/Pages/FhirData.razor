@@ -1,0 +1,42 @@
+﻿@page "/fhirdata"
+
+@inject DataStoreService dataStore
+@inject IJSRuntime jsRuntime
+
+<h1>FHIR Data</h1>
+
+<p>
+    <button class="btn btn-primary" @onclick="AddDefaultResources">Add Default Resources</button>
+    <button class="btn btn-primary" @onclick="DeleteAllResources">Delete ALL Resources</button>
+</p>
+
+@foreach (string resourceType in dataStore.Resources.Keys)
+{
+    <FhirResourceList ResourceType="@resourceType"/>
+}
+
+@code {
+
+    private void AddDefaultResources()
+    {
+        fhirCsR4.Models.Patient patient = new()
+        {
+            Name = new List<fhirCsR4.Models.HumanName>()
+            {
+                new ()
+                {
+                    Family = "Test",
+                    Given = new List<string>()
+                    {
+                        "Name",
+                    },
+                },
+            },
+        };                        
+    }
+
+    private void DeleteAllResources()
+    {
+
+    }
+}

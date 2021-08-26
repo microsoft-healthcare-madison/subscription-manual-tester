@@ -1,0 +1,35 @@
+﻿@inject DataStoreService dataStore
+
+@if (string.IsNullOrEmpty(ResourceType))
+{
+    <p>...</p>
+}
+else
+{
+    <h3>@ResourceType</h3>
+    <table class="table table-striped">
+        <thead class="thead-light">
+            <tr>
+                <th></th>
+                <th>ID</th>
+                <th>JSON</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (KeyValuePair<string, fhirCsR4.Models.Resource> kvp in dataStore.Resources[ResourceType])
+            {
+				<tr>
+					<td><span class="oi oi-x" aria-hidden="true"  ></span></td>
+					<td>@kvp.Key</td>
+					<td></td>
+				</tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    [Parameter]
+    public string ResourceType { get; set; } = "";
+}

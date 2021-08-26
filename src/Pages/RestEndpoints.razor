@@ -1,0 +1,126 @@
+﻿@page "/endpoints"
+
+@inject DataStoreService dataStore
+@inject IJSRuntime jsRuntime
+
+<h3>REST Endpoints</h3>
+
+
+@if (!dataStore.RestEndpoints.Any())
+{
+	<p>No endpoints have been defined, please add one below!</p>
+}
+else
+{
+	<table class="table table-striped">
+		<thead class="thead-light">
+			<tr>
+				<th></th>
+				<th>URL</th>
+				<th>Headers</th>
+			</tr>
+		</thead>
+		<tbody>
+			 @foreach (KeyValuePair<Uri, DataStoreService.RestEndpoint> kvp in dataStore.RestEndpoints)
+			 {
+				<tr>
+					<td><span class="oi oi-x" aria-hidden="true" @onclick="@(e => DeleteEndpoint(kvp.Key))" ></span></td>
+					<td>@kvp.Key</td>
+					<td>
+						<ul>
+							@foreach(string header in kvp.Value.Headers)
+							{
+								<li>@header</li>
+							}
+						</ul>
+					</td>
+				</tr>
+			 }
+		</tbody>
+	</table>
+}
+
+<button class="btn btn-primary" @onclick="ToggleAddEndpointHidden">Add Endpoint</button>
+<button class="btn btn-primary" disabled="@addEndpointIsHidden" @onclick="AddEndpoint">Save</button>
+<div hidden="@addEndpointIsHidden">
+	<p>
+		<label>
+			Notification Endpoint REST URL: 
+			<input @bind="inputUri"/>
+		</label>
+	</p>
+	<table class="table table-striped">
+		<thead class="thead-light">
+			<tr>
+				<th><span class="oi oi-plus" aria-hidden="true" @onclick="AddInputHeader"></span></th>
+				<th>Header</th>
+			</tr>
+		</thead>
+		<tbody>
+			 @foreach (KeyValuePair<Guid, string> kvp in inputHeaders)
+			 {
+				<tr>
+					<td><span class="oi oi-x" aria-hidden="true" @onclick="@(e => DeleteInputHeader(kvp.Key))" ></span></td>
+					<td>@kvp.Value</td>
+				</tr>
+			 }
+		</tbody>
+	</table>
+</div>
+
+
+@code {
+	private bool addEndpointIsHidden = true;
+
+	private string inputUri = string.Empty;
+	private Dictionary<Guid, string> inputHeaders = new Dictionary<Guid, string>();
+
+	private void ToggleAddEndpointHidden()
+	{
+		addEndpointIsHidden = !addEndpointIsHidden;
+	}
+
+	private void AddEndpoint()
+	{
+		if (string.IsNullOrWhiteSpace(inputUri))
+		{
+			jsRuntime.InvokeVoidAsync("alert", "URI is required to add an endpoint.");
+			return;
+		}
+
+		if (!Uri.TryCreate(inputUri, UriKind.Absolute, out Uri uri))
+		{
+			jsRuntime.InvokeVoidAsync("alert", $"Invalid endpoint URI: {inputUri}");
+			return;
+		}
+
+		List<string> headers = new List<string>();
+		headers.AddRange(inputHeaders.Values);
+		DataStoreService.RestEndpoint endpoint = new DataStoreService.RestEndpoint(
+			new Uri(inputUri),
+			headers);
+
+		dataStore.RestEndpoints.Add(endpoint.RestUri, endpoint);
+		dataStore.SaveAsync();
+
+		inputUri = string.Empty;
+		inputHeaders = new Dictionary<Guid, string>();
+		addEndpointIsHidden = true;
+	}
+
+	private void AddInputHeader()
+	{
+		inputHeaders.Add(Guid.NewGuid(), string.Empty);
+	}
+
+	private void DeleteInputHeader(Guid key)
+	{
+		inputHeaders.Remove(key);
+	}
+
+	private void DeleteEndpoint(Uri endpointUri)
+	{
+		dataStore.RestEndpoints.Remove(endpointUri);
+		dataStore.SaveAsync();
+	}
+}
